@@ -1,41 +1,76 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Pr4
+namespace Example
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
-            int N = 10, M = 7;
-            int[,] a = new int[N, M];
-
-            Random random = new Random();
-            int rand;
-            for (int i = 0; i < N; i++)
+            var payments = Create(10, 4);
+            Print(ref payments);
+            Console.WriteLine($"Общее число покупателей: {CountAll(ref payments)}");
+            Console.WriteLine($"Расплатились наличными: {CountCash(ref payments)}");
+            Console.WriteLine($"Расплатились картами: {CountCard(ref payments)}");
+            Info(ref payments);
+            Console.ReadKey();
+        }
+        private struct Payment
+        {
+            public int Cash;
+            public int Card;
+            public override string ToString() { return Cash.ToString() + " : " + Card.ToString(); }
+        }
+        private static void Print(ref Payment[] payments) { foreach (var payment in payments) Console.Write(payment + " | "); }
+        private static void Print(ref Payment[][] payments)
+        {
+            var line = new string('-', 55);
+            for (var i = 0; i != payments.Length; ++i)
             {
-                for (int j = 0; j < M; j++)
+                Print(ref payments[i]);
+                Console.WriteLine("\n" + line);
+            }
+        }
+        private static Payment[][] Create(int week, int day, int min = 4, int max = 9)
+        {
+            var payments = new Payment[week][];
+            var rand = new Random();
+            const int n = 7;
+            for (var i = 0; i != week; ++i)
+            {
+                var limit = rand.Next(day, n + 1);
+                payments[i] = new Payment[n];
+                var j = 0;
+                Payment payment;
+                while (j < limit)
                 {
-                    rand = random.Next(0, 100);
-                    a[i, j] = rand;
+                    payment.Cash = rand.Next(min, max);
+                    payment.Card = rand.Next(min, max);
+                    payments[i][j] = payment;
+                    ++j;
+                }
+                while (j < n)
+                {
+                    payment.Cash = payment.Card = 0;
+                    payments[i][j] = payment;
+                    ++j;
                 }
             }
-            Console.WriteLine("исходная матрица:");
-
-            for (int i = 0; i < N; i++)
+            return payments;
+        }
+        private static int CountCash(ref Payment[] payments) { return payments.Sum(n => n.Cash); }
+        private static int CountCash(ref Payment[][] payments) { return payments.Sum(n => CountCash(ref n)); }
+        private static int CountCard(ref Payment[] payments) { return payments.Sum(n => n.Card); }
+        private static int CountCard(ref Payment[][] payments) { return payments.Sum(n => CountCard(ref n)); }
+        private static int CountAll(ref Payment[] payments) { return CountCash(ref payments) + CountCard(ref payments); }
+        private static int CountAll(ref Payment[][] payments) { return payments.Sum(n => CountAll(ref n)); }
+        private static bool MainlyInCash(ref Payment[] payments) { return CountCash(ref payments) > CountCard(ref payments); }
+        private static void Info(ref Payment[][] payments)
+        {
+            for (var i = 0; i != payments.Length; ++i)
             {
-                for (int j = 0; j < M; j++)
-
-                    Console.Write(a[i, j] + " ");
-
-                Console.WriteLine();
+                var result = MainlyInCash(ref payments[i]) ? "Наличными" : "Картой";
+                Console.WriteLine($"{i + 1}. {result}");
             }
-            // Keep the console window open in debug mode.
-            Console.WriteLine("Press any key to exit.");
-            Console.ReadKey();
         }
     }
 }
